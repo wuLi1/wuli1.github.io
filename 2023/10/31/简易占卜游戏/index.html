@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>灵光 · 易经白话签</title>
+    <style>
+        :root {
+            --bg-color: #FDFBF7;
+            --card-bg: #FFFFFF;
+            --primary-red: #A8463E;
+            --text-main: #2C2C2C;
+            --text-sub: #888888;
+            --tag-work-bg: #FDEDED; --tag-work-text: #D93636;
+            --tag-love-bg: #FDF0E6; --tag-love-text: #D46B08;
+            --tag-life-bg: #F0F5FF; --tag-life-text: #1890FF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center; /* 电脑端水平居中 */
+        }
+
+        /* 全局容器：限制最大宽度，模拟手机体验 */
+        .app-container {
+            width: 100%;
+            max-width: 480px; /* 核心：限制最大宽度 */
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.05); /* 电脑端两侧阴影 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- 页面切换逻辑 --- */
+        .page {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        .page.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ==================== 首页样式 ==================== */
+        .home-header {
+            margin-top: 60px;
+            text-align: center;
+            margin-bottom: 60px;
+            flex-shrink: 0;
+        }
+
+        .home-title {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .home-title .icon {
+            background: var(--primary-red);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .home-desc {
+            color: var(--text-sub);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* 大圆按钮 */
+        .draw-circle-btn {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #B8554A, #903A32);
+            box-shadow: 0 10px 30px rgba(168, 70, 62, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        /* 电脑端 Hover 效果 */
+        @media (hover: hover) {
+            .draw-circle-btn:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 40px rgba(168, 70, 62, 0.4);
+            }
+            .nav-item:hover, .btn:hover { opacity: 0.8; }
+        }
+
+        .draw-circle-btn:active { transform: scale(0.95); }
+
+        .draw-circle-btn .gua-icon {
+            font-size: 60px;
+            line-height: 1;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .draw-circle-btn span {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: 2px;
+        }
+
+        .home-footer {
+            margin-top: auto;
+            text-align: center;
+            color: #CCC;
+            font-size: 12px;
+            padding-bottom: 20px;
+            line-height: 1.6;
+            width: 100%;
+        }
+
+        /* ==================== 结果页样式 ==================== */
+        .result-nav {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            color: var(--text-sub);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .nav-item { cursor: pointer; display: flex; align-items: center; gap: 5px; transition: opacity 0.2s; }
+
+        /* 顶部运势条 */
+        .fortune-bar {
+            background: #E8ECEF;
+            color: #4A5568;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        /* 核心卡片 - 自适应高度 */
+        .result-card {
+            background: var(--card-bg);
+            width: 100%;
+            border-radius: 24px;
+            padding: 30px 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.04);
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-gua-symbol {
+            font-size: 70px;
+            color: var(--primary-red);
+            line-height: 1;
+            margin-right: 20px;
+            letter-spacing: -8px;
+        }
+
+        .card-info h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-level-tag {
+            font-size: 12px;
+            background: #F0F0F0;
+            color: #666;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: normal;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .divider { height: 1px; background: #F5F5F5; margin: 20px 0; }
+
+        .hint-section { margin-bottom: 25px; }
+        .hint-label { font-size: 13px; color: #999; margin-bottom: 8px; }
+        .hint-title { font-size: 22px; font-weight: bold; margin-bottom: 8px; color: var(--text-main); }
+        .hint-desc { font-size: 15px; color: var(--text-sub); line-height: 1.6; }
+
+        .advice-list { display: flex; flex-direction: column; gap: 12px; }
+        .advice-item {
+            background: #FAFAFA;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            transition: transform 0.2s;
+        }
+        
+        @media (hover: hover) {
+            .advice-item:hover { transform: translateX(5px); background: #F5F5F5; }
+        }
+
+        .scene-tag {
+            font-size: 13px; padding: 4px 10px; border-radius: 8px; margin-right: 12px; white-space: nowrap; font-weight: 600;
+        }
+        .tag-work { background: var(--tag-work-bg); color: var(--tag-work-text); }
+        .tag-love { background: var(--tag-love-bg); color: var(--tag-love-text); }
+        .tag-life { background: var(--tag-life-bg); color: var(--tag-life-text); }
+        .advice-text { font-size: 15px; color: #444; line-height: 1.5; padding-top: 2px; }
+
+        /* 底部按钮 */
+        .bottom-actions {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 30px;
+            font-size: 17px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+        .btn-share { background: #FFF4E5; color: #8B4513; }
+        .btn-retry { background: #2C2C2C; color: white; }
+
+        /* 动画 */
+        .shaking { animation: shake 0.5s ease-in-out infinite; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            75% { transform: translateX(5px) rotate(2deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 全局容器 -->
+    <div class="app-container">
+        
+        <!-- ==================== 首页 ==================== -->
+        <div id="homePage" class="page active">
+            <div class="home-header">
+                <div class="home-title">
+                    <span class="icon">签</span>
+                    极简白话抽签
+                </div>
+                <div class="home-desc">
+                    心里默念想的事，摇一签<br>给自己一个今天的提示
+                </div>
+            </div>
+
+            <div class="draw-circle-btn" id="homeDrawBtn" onclick="startDraw()">
+                <div class="gua-icon">☰</div>
+                <span>摇一签</span>
+            </div>
+
+            <div style="margin-top: 30px; text-align: center; color: #AAA; font-size: 13px;">
+                点击按钮即可抽签<br>同一分钟内会摇到同一卦 · 随时可再摇
+            </div>
+
+            <div class="home-footer">
+                本工具仅供日常娱乐与心理参考，不构成任何决策建议
+            </div>
+        </div>
+
+        <!-- ==================== 结果页 ==================== -->
+        <div id="resultPage" class="page">
+            <div class="result-nav">
+                <div class="nav-item" onclick="goHome()">🏠 首页</div>
+                <div class="nav-item" onclick="startDraw()">↺ 换一签</div>
+                <div class="nav-item">🕒 历史</div>
+            </div>
+
+            <!-- 顶部运势条 -->
+            <div class="fortune-bar" id="fortuneBar">
+                🌙 此卦平稳 · 蓄力待发 🌙
+            </div>
+
+            <!-- 核心卡片 -->
+            <div class="result-card">
+                <div class="card-header">
+                    <div class="card-gua-symbol" id="resSymbol">☰</div>
+                    <div class="card-info">
+                        <h2 id="resName">乾卦 <span class="card-level-tag" id="resLevel">上上签</span></h2>
+                        <div class="card-subtitle" id="resIndex">第 1 卦 · 六十四卦之一</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="hint-section">
+                    <div class="hint-label">今日提示</div>
+                    <div class="hint-title" id="resMain">天行健，君子以自强不息</div>
+                    <div class="hint-desc" id="resSub">时机大好，你的能量正在爆发期，大胆去追求目标吧！</div>
+                </div>
+
+                <div class="advice-list">
+                    <div class="advice-item">
+                        <span class="scene-tag tag-work">工作</span>
+                        <span class="advice-text" id="resWork">项目推进顺利，适合主动争取机会。</span>
+                    </div>
+                    <div class="advice-item">
+                        <span class="scene-tag tag-love">感情</span>
+                        <span class="advice-text" id="resLove">魅力值爆棚，单身者容易吸引异性。</span>
+                    </div>
+                    <div class="advice-item">
+                        <span class="scene-tag tag-life">日常</span>
+                        <span class="advice-text" id="resLife">精力充沛，适合运动健身或开启新计划。</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-actions">
+                <button class="btn btn-share" onclick="shareResult()">📤 分享给朋友</button>
+                <button class="btn btn-retry" onclick="startDraw()">🔮 再摇一签</button>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        // 真实易经六十四卦完整数据
+        const yiJingData = [
+            { id: 1, name: "乾卦", symbol: "☰", level: "上上签", fortune: "此卦大吉 · 飞龙在天", main: "天行健，君子以自强不息", sub: "时机大好，你的能量正在爆发期，大胆去追求目标吧！", work: "项目推进顺利，适合主动争取机会，领导会看到你的努力。", love: "魅力值爆棚，单身者容易吸引异性，有伴者关系更进一步。", life: "精力充沛，适合运动健身或开启一项新计划。" },
+            { id: 2, name: "坤卦", symbol: "☷", level: "上签", fortune: "此卦平稳 · 厚德载物", main: "地势坤，君子以厚德载物", sub: "顺势而为，包容万物。现在不是强出头的时候，配合别人能成大事。", work: "做好辅助工作，配合团队节奏，你的稳重是团队的后盾。", love: "温柔体贴是最大的武器，多倾听对方的烦恼，给予支持。", life: "适合居家整理、陪伴家人，享受平静的时光。" },
+            { id: 3, name: "屯卦", symbol: "☵☳", level: "下签", fortune: "此卦艰难 · 万物始生", main: "万事开头难，勿轻举妄动", sub: "就像种子破土，虽然艰难但充满希望。现在宜守不宜进，打好基础最重要。", work: "新项目刚启动，困难重重是正常的，不要急于求成，先稳住阵脚。", love: "关系还在萌芽期，不要逼得太紧，给彼此一点成长的空间。", life: "可能会遇到一些小麻烦，保持耐心，一步步解决就好。" },
+            { id: 4, name: "蒙卦", symbol: "☶☵", level: "中签", fortune: "此卦需学 · 启蒙发智", main: "蒙以养正，圣功也", sub: "现在是你学习新东西的好时候，不懂就问，不要装懂。", work: "业务不熟练没关系，多向老员工请教，现在犯错成本最低。", love: "多了解对方的喜好，不要自以为是地付出。", life: "看书、听课、看纪录片，今天吸收知识特别快。" },
+            { id: 5, name: "需卦", symbol: "☵☰", level: "中签", fortune: "此卦宜等 · 蓄势待发", main: "云上于天，需，君子以饮食宴乐", sub: "时机还没完全成熟，急也没用。不如趁现在吃好喝好，养精蓄锐。", work: "方案还在审批，别催了，先把手头的小事做好。", love: "暧昧期不要急着确定关系，享受当下的快乐。", life: "适合去吃顿好的，或者安排一次放松的按摩。" },
+            { id: 6, name: "讼卦", symbol: "☰☵", level: "下签", fortune: "此卦需忍 · 止争免讼", main: "天与水违行，讼，君子以作事谋始", sub: "冲突没有真正的赢家，沟通化解比争对错有用。", work: "有分歧先沟通，别让小事升级，避免卷入办公室政治。", love: "赢了道理输了感情，不如先低头，冷静后再谈。", life: "想发火时先冷静十分钟，避免冲动消费或口角。" },
+            { id: 7, name: "师卦", symbol: "☷☵", level: "中签", fortune: "此卦宜聚 · 统兵御将", main: "地中有水，师，君子以容民畜众", sub: "需要团队的力量，单打独斗行不通了。找一个靠谱的伙伴一起干。", work: "适合团队合作，或者向行业前辈请教，他们能给你指明方向。", love: "感情需要双方共同经营，遇到问题一起面对，别一个人扛。", life: "适合参加社群活动或聚会，结识志同道合的朋友。" },
+            { id: 8, name: "比卦", symbol: "☵☷", level: "上签", fortune: "此卦宜合 · 亲密无间", main: "地上有水，比，先王以建万国，亲诸侯", sub: "人际关系极佳，贵人就在身边。主动去联系老朋友，会有惊喜。", work: "跨部门合作非常顺利，大家愿意帮你，别不好意思开口。", love: "心意相通，适合约会、见家长或确立关系。", life: "心情愉悦，适合和闺蜜/兄弟小聚，分享最近的趣事。" },
+            { id: 9, name: "小畜卦", symbol: "☴☰", level: "中签", fortune: "此卦宜蓄 · 密云不雨", main: "风行天上，小畜，君子以懿文德", sub: "力量还在积蓄中，就像乌云密布但还没下雨。别急，继续修炼内功。", work: "项目还在筹备期，细节决定成败，多检查几遍方案。", love: "还在互相试探，不要急于表白，用行动证明自己。", life: "适合读书、健身、存钱，为未来的大计划做准备。" },
+            { id: 10, name: "履卦", symbol: "☰☱", level: "中签", fortune: "此卦宜慎 · 伴虎而眠", main: "上天下泽，履，君子以辨上下，定民志", sub: "就像踩在老虎尾巴上，必须小心翼翼。遵守规则，保持谦逊，就能化险为夷。", work: "面对强势的领导或客户，不要硬碰硬，按流程办事最安全。", love: "相处要注意分寸，不要开过火的玩笑，尊重对方的底线。", life: "出门注意交通安全，做事不要急躁，稳扎稳打。" },
+            { id: 11, name: "泰卦", symbol: "☷☰", level: "上上签", fortune: "此卦大吉 · 三阳开泰", main: "天地交，泰，后以财成天地之道", sub: "阴阳交融，万事亨通。之前的努力开始有回报了，大胆去推进吧！", work: "上下级关系融洽，合作愉快，会有好消息或晋升机会。", love: "心意相通，误会消除，是约会、表白或见家长的好日子。", life: "心情舒畅，胃口不错，适合约朋友聚餐庆祝。" },
+            { id: 12, name: "否卦", symbol: "☰☷", level: "下下签", fortune: "此卦闭塞 · 宜守不宜进", main: "天地不交，否，君子以俭德辟难", sub: "运势暂时受阻，沟通不畅。急也没用，不如趁现在低调蓄力。", work: "容易背锅或被孤立。建议少说话多做事，保留书面记录。", love: "双方都在气头上，冷战概率大。给彼此一点空间冷静。", life: "注意身体健康，尤其是肠胃和睡眠，早点休息。" },
+            { id: 13, name: "同人卦", symbol: "☰☲", level: "上签", fortune: "此卦宜聚 · 志同道合", main: "天与火，同人，君子以类族辨物", sub: "找到组织的时候了！多参加社交活动，你的同频伙伴正在向你走来。", work: "跨部门合作非常顺利，大家愿意帮你，别不好意思开口。", love: "容易遇到聊得来的人，或者和伴侣找到共同爱好。", life: "适合参加社群活动、兴趣班，结识新朋友。" },
+            { id: 14, name: "大有卦", symbol: "☲☰", level: "上上签", fortune: "此卦大获 · 日丽中天", main: "火在天上，大有，君子以遏恶扬善", sub: "收获的季节到了！你的光芒藏不住了，但记得保持谦虚，多分享。", work: "业绩突出，容易获得表彰或奖金，适合展示成果。", love: "魅力四射，容易成为人群焦点，单身者桃花旺盛。", life: "适合做公益、分享经验，或者给自己买份礼物庆祝。" },
+            { id: 15, name: "谦卦", symbol: "☷☶", level: "上签", fortune: "此卦大吉 · 地中有山", main: "地中有山，谦，君子以裒多益寡", sub: "满招损，谦受益。保持低调谦逊，反而能赢得所有人的尊重。", work: "不要居功自傲，多把功劳分给团队，你会走得更远。", love: "温柔低调的态度最吸引人，不要过于强势。", life: "适合做志愿者或帮助他人，赠人玫瑰手有余香。" },
+            { id: 16, name: "豫卦", symbol: "☳☷", level: "中签", fortune: "此卦宜乐 · 顺时而动", main: "雷出地奋，豫，先王以作乐崇德", sub: "时机成熟，可以放松一下了。顺应局势，该享受就享受，别太紧绷。", work: "项目进入收尾阶段，可以安排团建或庆祝，鼓舞士气。", love: "适合安排浪漫的约会，制造惊喜，气氛会很愉快。", life: "听音乐会、看电影、去游乐园，今天适合放松身心。" },
+            { id: 17, name: "随卦", symbol: "☱☳", level: "中签", fortune: "此卦宜随 · 顺势而为", main: "泽中有雷，随，君子以向晦入宴息", sub: "不要固执己见，听听别人的建议。跟着大部队走，会有意外收获。", work: "灵活应变，根据市场或领导的反馈调整方案，不要死磕。", love: "多迁就对方一点，顺着对方的心意，关系会更融洽。", life: "随性一点，不要做太严密的计划，享受随遇而安。" },
+            { id: 18, name: "蛊卦", symbol: "☶☴", level: "下签", fortune: "此卦需整 · 拨乱反正", main: "山下有风，蛊，君子以振民育德", sub: "有些历史遗留问题需要解决了。别怕麻烦，现在正是清理整顿的好时机。", work: "接手烂摊子别抱怨，这正是你展现能力、立功的好机会。", love: "把心里的疙瘩说出来，解决积压的矛盾，关系才能健康。", life: "大扫除、清理电脑文件、扔掉不需要的东西，断舍离。" },
+            { id: 19, name: "临卦", symbol: "☷☱", level: "上签", fortune: "此卦大吉 · 亲临督导", main: "泽上有地，临，君子以教思无穷", sub: "好运降临，贵人相助。你的努力被看到了，大胆往前走！", work: "领导器重，客户认可，适合主动汇报工作或争取资源。", love: "主动出击会有好结果，你的真诚会打动对方。", life: "适合学习新技能或指导新人，教学相长。" },
+            { id: 20, name: "观卦", symbol: "☴☷", level: "中签", fortune: "此卦宜观 · 仰观宇宙", main: "风行地上，观，先王以省方观民设教", sub: "先别急着动手，多看多听多观察。看清局势再出手，事半功倍。", work: "多研究竞品或行业动态，不要闭门造车，眼界要开阔。", love: "观察对方的言行细节，不要只听他说什么，要看他做什么。", life: "看展、看书、看纪录片，今天适合输入信息。" },
+            { id: 21, name: "噬嗑卦", symbol: "☲☳", level: "中签", fortune: "此卦宜决 · 咬合障碍", main: "雷电噬嗑，先王以明罚敕法", sub: "遇到阻碍了？那就咬碎它！果断处理问题，不要拖泥带水。", work: "有纠纷或合同问题，现在适合谈判、签约或解决争议。", love: "把话说开，不要藏着掖着，直接沟通能解决误会。", life: "果断扔掉坏习惯，或者去拔牙、做体检，解决身体隐患。" },
+            { id: 22, name: "贲卦", symbol: "☶☲", level: "中签", fortune: "此卦宜饰 · 文质彬彬", main: "山下有火，贲，君子以明庶政，无敢折狱", sub: "人靠衣装马靠鞍。今天适合注重外表和形式，但别忘了内在。", work: "注意职场形象，PPT要做得漂亮，汇报要讲究话术。", love: "打扮得好看点去约会，仪式感很重要，能增加好感。", life: "化妆、做头发、布置房间，让自己和环境都美起来。" },
+            { id: 23, name: "剥卦", symbol: "☶☷", level: "下下签", fortune: "此卦宜守 · 基础动摇", main: "山附于地，剥，上以厚下安宅", sub: "运势低谷，根基不稳。千万不要在这个时候做重大决定或投资。", work: "防范小人，注意合同陷阱，不要轻信别人的承诺。", love: "关系可能面临考验，不要强求，顺其自然，保护好自己。", life: "注意身体虚弱，不要熬夜，多吃温补的食物。" },
+            { id: 24, name: "复卦", symbol: "☷☳", level: "上签", fortune: "此卦转机 · 一阳来复", main: "雷在地中，复，先王以至日闭关", sub: "最坏的时候过去了！新的周期开始了，虽然力量还小，但方向是对的。", work: "重新开始一个项目，或者调整心态，重新出发。", love: "分手后有复合的可能，或者遇到让你心动的新人。", life: "早睡早起，恢复运动，把生活节奏调整回来。" },
+            { id: 25, name: "无妄卦", symbol: "☰☳", level: "中签", fortune: "此卦宜诚 · 无妄之灾", main: "天下雷行，物与无妄，先王以茂对时育万物", sub: "保持真诚，不要有非分之想。顺其自然，不要强求结果。", work: "脚踏实地，不要想着走捷径或钻空子，老实干活最稳。", love: "真诚是必杀技，不要套路，真心对待对方。", life: "不要乱吃东西，不要闯红灯，遵守规则保平安。" },
+            { id: 26, name: "大畜卦", symbol: "☶☰", level: "上签", fortune: "此卦宜蓄 · 积少成多", main: "天在山中，大畜，君子以多识前言往行", sub: "厚积薄发的时候到了。多学习，多存钱，多积累人脉。", work: "适合考证、进修、储备资源，为未来的大项目做准备。", love: "多了解对方的过去和喜好，积累感情基础。", life: "读书、健身、存钱，今天适合做长期投资。" },
+            { id: 27, name: "颐卦", symbol: "☶☳", level: "中签", fortune: "此卦宜养 · 慎言节食", main: "山下有雷，颐，君子以慎言语，节饮食", sub: "关注你的身心健康。管住嘴，迈开腿，少说废话多做事。", work: "注意职场言辞，不要乱说话，谨防祸从口出。", love: "多关心对方的饮食起居，做顿好饭比送礼物更暖心。", life: "清淡饮食，少吃外卖，早睡早起，养生走起。" },
+            { id: 28, name: "大过卦", symbol: "☱☴", level: "下签", fortune: "此卦宜慎 · 栋梁弯曲", main: "泽灭木，大过，君子以独立不惧，遁世无闷", sub: "压力太大了，有点扛不住？别硬撑，学会求助，或者适当放下。", work: "任务过重时，要学会拒绝或分担，不要把自己逼太紧。", love: "不要过度付出，也不要过度索取，平衡最重要。", life: "去按摩、泡澡、冥想，给自己彻底放松一下。" },
+            { id: 29, name: "坎卦", symbol: "☵", level: "下下签", fortune: "此卦险阻 · 重重险难", main: "水洊至，习坎，君子以常德行，习教事", sub: "困难重重，就像在迷宫里。不要慌，保持信念，一步步走就能出去。", work: "遇到瓶颈或危机，不要逃避，直面问题，寻找突破口。", love: "感情遇到考验，不要轻言放弃，共同面对难关。", life: "注意防水、防滑，开车小心，保持心态平稳。" },
+            { id: 30, name: "离卦", symbol: "☲", level: "上签", fortune: "此卦光明 · 附丽正道", main: "明两作，离，大人以继明照于四方", sub: "前途光明！你的才华会被看到，像太阳一样发光发热吧。", work: "适合展示才华、发表作品、公开演讲，你会很耀眼。", love: "热情似火，魅力四射，单身者容易遇到心动的人。", life: "去阳光好的地方，拍照、画画，释放你的创造力。" },
+            { id: 31, name: "咸卦", symbol: "☱☶", level: "上签", fortune: "此卦感应 · 心有灵犀", main: "山上有泽，咸，君子以虚受人", sub: "感应到了吗？缘分到了，不要犹豫，主动去连接。", work: "团队合作默契，沟通顺畅，容易达成共识。", love: "一见钟情或心意相通，适合表白、约会、确立关系。", life: "多和朋友联系，今天你的直觉很准，相信感觉。" },
+            { id: 32, name: "恒卦", symbol: "☳☴", level: "上签", fortune: "此卦长久 · 持之以恒", main: "雷风恒，君子以立不易方", sub: "坚持就是胜利。不要频繁变动，认准的方向就走下去。", work: "深耕你的专业，不要频繁跳槽，长期主义会有回报。", love: "细水长流的感情最珍贵，多些耐心，少些抱怨。", life: "坚持运动、坚持阅读，好习惯养成中。" },
+            { id: 33, name: "遁卦", symbol: "☰☶", level: "中签", fortune: "此卦宜退 · 明哲保身", main: "天下有山，遁，君子以远小人，不恶而严", sub: "惹不起躲得起。遇到烂人烂事，不要纠缠，优雅转身。", work: "不要卷入办公室斗争，保持距离，专注自己的事。", love: "如果对方一直消耗你，及时止损，退一步海阔天空。", life: "减少无效社交，独处充电，远离负能量的人。" },
+            { id: 34, name: "大壮卦", symbol: "☳☰", level: "中签", fortune: "此卦强盛 · 非礼弗履", main: "雷在天上，大壮，君子以非礼弗履", sub: "能量爆棚，但别冲动！力量要用在正道上，遵守规则。", work: "执行力很强，但要注意方式方法，不要粗暴行事。", love: "热情是好事，但别吓到对方，尊重对方的节奏。", life: "适合运动发泄，但注意不要受伤，量力而行。" },
+            { id: 35, name: "晋卦", symbol: "☲☷", level: "上上签", fortune: "此卦晋升 · 日出地上", main: "明出地上，晋，君子以自昭明德", sub: "升职加薪的好兆头！你的努力被看见了，继续发光吧。", work: "适合争取晋升、加薪、拓展业务，机会就在眼前。", love: "感情升温，关系更进一步，适合公开恋情或订婚。", life: "心情大好，适合做让自己开心的事，奖励自己。" },
+            { id: 36, name: "明夷卦", symbol: "☷☲", level: "下签", fortune: "此卦晦暗 · 韬光养晦", main: "明入地中，明夷，君子以莅众，用晦而明", sub: "才华被埋没？别急，这是考验。收敛锋芒，保护自己。", work: "不要出风头，默默做事，等待时机，避免被针对。", love: "不要强求对方的理解，有些委屈自己消化，别冲突。", life: "低调行事，不要炫富或炫耀，避免招惹是非。" },
+            { id: 37, name: "家人卦", symbol: "☴☲", level: "上签", fortune: "此卦宜家 · 齐家治国", main: "风自火出，家人，君子以言有物而行有恒", sub: "家和万事兴。多关注家庭，处理好内部关系，后方稳了前方才稳。", work: "团队像家人一样团结，或者适合处理家族企业事务。", love: "多陪陪家人，或者和伴侣聊聊未来规划，增进感情。", life: "大扫除、做饭、陪父母聊天，享受家庭时光。" },
+            { id: 38, name: "睽卦", symbol: "☲☱", level: "下签", fortune: "此卦有异 · 求同存异", main: "上火下泽，睽，君子以同而异", sub: "意见不合很正常。不要强求一致，和而不同才是大智慧。", work: "跨部门沟通有障碍，换个角度想问题，寻找共同利益点。", love: "吵架了？别争对错，先冷静，接受彼此的不同。", life: "遇到奇葩事别生气，世界很大，什么鸟都有。" },
+            { id: 39, name: "蹇卦", symbol: "☵☶", level: "下签", fortune: "此卦难行 · 见险而止", main: "山上有水，蹇，君子以反身修德", sub: "路不好走，别硬闯。停下来反思一下，是不是方向错了？", work: "项目受阻，不要盲目推进，先复盘，找外援。", love: "关系遇到瓶颈，不要逼对方，先提升自己。", life: "别去危险的地方，别做高风险投资，安全第一。" },
+            { id: 40, name: "解卦", symbol: "☳☵", level: "上签", fortune: "此卦化解 · 雷雨作解", main: "雷雨作，解，君子以赦过宥罪", sub: "困难解决了！雨过天晴，放下包袱，轻装上阵。", work: "问题解决，误会消除，适合收尾或开启新阶段。", love: "和好如初，原谅对方的小错误，翻篇了。", life: "去洗个热水澡，或者去剪个头发，焕然一新。" },
+             { id: 41, name: "损卦", symbol: "☶☱", level: "中签", fortune: "此卦宜损 · 损下益上", main: "山下有泽，损，君子以惩忿窒欲", sub: "有舍才有得。不要心疼眼前的损失，这是为未来投资。", work: "适当让利给客户或团队，吃亏是福，长远看是赚的。", love: "多付出一点，少计较回报，感情是存折不是算盘。", life: "断舍离，扔掉不需要的东西，腾出空间给美好的。" },
+            { id: 42, name: "益卦", symbol: "☴☳", level: "上上签", fortune: "此卦大吉 · 风雷益", main: "风雷益，君子以见善则迁，有过则改", sub: "天降好运！有人帮你，有资源倾斜，抓住机会，大胆干。", work: "适合拓展业务、接受新任务、争取资源，一路绿灯。", love: "遇到对你好的人，或者感情有实质性进展。", life: "适合学习、旅行、做公益，今天做什么都有收获。" },
+            { id: 43, name: "夬卦", symbol: "☱☰", level: "中签", fortune: "此卦宜决 · 决而能和", main: "泽上于天，夬，君子以施禄及下，居德则忌", sub: "该做决定了！不要拖泥带水，果断处理，但要注意方式。", work: "裁员、分手、结束合作，长痛不如短痛，但要体面。", love: "如果不合适，就勇敢说再见，不要耽误彼此。", life: "改掉一个坏习惯，或者结束一段消耗你的关系。" },
+            { id: 44, name: "姤卦", symbol: "☰☴", level: "下签", fortune: "此卦宜防 · 不期而遇", main: "天下有风，姤，后以施命诰四方", sub: "意外相遇，可能是惊喜，也可能是坑。保持警惕，不要轻信。", work: "小心突如其来的诱惑或陷阱，天上不会掉馅饼。", love: "烂桃花出现，或者前任回头，别心软，看清本质。", life: "注意陌生人搭讪，不要乱点链接，防诈骗。" },
+            { id: 45, name: "萃卦", symbol: "☱☷", level: "上签", fortune: "此卦宜聚 · 荟萃一堂", main: "泽上于地，萃，君子以除戎器，戒不虞", sub: "人才、资源都聚过来了。好好整合，但要防范内部矛盾。", work: "团队组建完成，适合开启动会，明确目标。", love: "社交圈扩大，容易遇到志同道合的朋友或伴侣。", life: "参加聚会、年会，享受热闹的氛围。" },
+            { id: 46, name: "升卦", symbol: "☷☴", level: "上签", fortune: "此卦上升 · 积小成大", main: "地中生木，升，君子以顺德，积小以高大", sub: "稳步上升中。不要急，像树一样慢慢长，根基越深长得越高。", work: "业绩稳步增长，职位慢慢提升，坚持就是胜利。",   love: "细水长流的感情最珍贵，多些耐心，少些抱怨。",  life: "坚持运动、读书，好习惯的养成需要时间。" },
+            { id: 47, name: "困卦", symbol: "☱☵", level: "下签", fortune: "此卦受困 · 泽无水", main: "泽无水，困，君子以致命遂志", sub: "资源匮乏，感到疲惫。这时候最考验心态，不要放弃心中的志向。", work: "遇到瓶颈或资金短缺，不要盲目扩张，先稳住基本盘。", love: "沟通不畅，感觉被束缚。给彼此一点空间，不要逼得太紧。", life: "感到疲惫就休息，不要硬撑，多喝水，注意肾脏健康。" },
+            { id: 48, name: "井卦", symbol: "☵☴", level: "中签", fortune: "此卦宜修 · 养民济世", main: "木上有水，井，君子以劳民劝相", sub: "像水井一样默默奉献。不要急于求成，持续输出价值，自然会有回报。", work: "深耕你的核心技能，做好本职工作，你是团队不可或缺的基石。", love: "默默关心对方，细水长流的陪伴最长久。", life: "适合学习、阅读、自我提升，不断给自己“蓄水”。" },
+            { id: 49, name: "革卦", symbol: "☱☲", level: "中签", fortune: "此卦宜变 · 顺天应人", main: "泽中有火，革，君子以治历明时", sub: "时机成熟，该改变了！不要留恋过去，勇敢打破旧格局。", work: "适合转型、改革、换赛道，顺应趋势才能赢。", love: "改变相处模式，或者结束一段不健康的关系，迎接新生。", life: "换个发型、重新布置房间、改掉坏习惯，焕然一新。" },
+            { id: 50, name: "鼎卦", symbol: "☲☴", level: "上签", fortune: "此卦大吉 · 鼎新革故", main: "木上有火，鼎，君子以正位凝命", sub: "新气象！就像鼎里煮着美食，收获和成果正在酝酿中。", work: "项目即将成功，适合发布新产品、新计划，会大获好评。", love: "感情稳定，像鼎一样稳固，适合订婚或结婚。", life: "享受美食，烹饪一顿大餐，犒劳自己。" },
+            { id: 51, name: "震卦", symbol: "☳", level: "中签", fortune: "此卦宜动 · 震惊百里", main: "洊雷，震，君子以恐惧修省", sub: "突发事件？别慌！这是提醒你反思和调整，危机也是转机。", work: "遇到突发状况，冷静应对，快速调整方案，不要乱了阵脚。", love: "可能会有争吵或意外，冷静处理，不要冲动说分手。", life: "注意交通安全，避免剧烈运动，保持心态平稳。" },
+            { id: 52, name: "艮卦", symbol: "☶", level: "中签", fortune: "此卦宜止 · 动静有时", main: "兼山，艮，君子以思不出其位", sub: "该停就停。不要盲目行动，停下来思考，看清方向再走。", work: "不要急于推进，先复盘，想清楚再做，磨刀不误砍柴工。", love: "不要逼对方表态，给彼此冷静的时间，欲速则不达。", life: "冥想、静坐、发呆，今天适合放空自己。" },
+            { id: 53, name: "渐卦", symbol: "☴☶", level: "上签", fortune: "此卦宜缓 · 循序渐进", main: "山上有木，渐，君子以居贤德善俗", sub: "慢慢来，比较快。像树木生长一样，一步一个脚印，终会参天。", work: "不要急于求成，按部就班，稳扎稳打，成果自然来。", love: "感情需要慢慢培养，不要闪婚或急于确定关系。", life: "坚持运动、读书，好习惯的养成需要时间。" },
+            { id: 54, name: "归妹卦", symbol: "☳☱", level: "下签", fortune: "此卦宜慎 · 征凶无攸利", main: "泽上有雷，归妹，君子以永终知敝", sub: "位置不对，强求无益。不要勉强自己进入不适合的环境或关系。", work: "不要盲目跳槽或接手烂摊子，看清现实，避免踩坑。", love: "不要为了结婚而结婚，不要委屈自己，宁缺毋滥。", life: "不要勉强社交，不要做超出能力的事，量力而行。" },
+            { id: 55, name: "丰卦", symbol: "☳☲", level: "上上签", fortune: "此卦大吉 · 日中则昃", main: "雷电皆至，丰，君子以折狱致刑", sub: "巅峰时刻！你的光芒最盛，但记得居安思危，见好就收。", work: "业绩巅峰，适合扩大战果，但也要防范风险。", love: "感情甜蜜，但不要因为得意忘形而忽略对方。", life: "享受当下的快乐，但也要为未来做打算。" },
+            { id: 56, name: "旅卦", symbol: "☲☶", level: "中签", fortune: "此卦宜行 · 漂泊不定", main: "山上有火，旅，君子以明慎用刑", sub: "在路上。不要强求稳定，适应变化，保持低调，谨慎行事。", work: "出差、外派、新项目，保持谦逊，多观察少发言。", love: "异地恋或感情不稳定，多沟通，给彼此安全感。", life: "适合旅行、搬家、换个环境，但要注意安全。" },
+            { id: 57, name: "巽卦", symbol: "☴", level: "中签", fortune: "此卦宜顺 · 随风潜入", main: "随风，巽，君子以申命行事", sub: "像风一样无孔不入。用柔和的方式达成目的，不要硬碰硬。", work: "用沟通代替命令，用柔性策略解决问题，事半功倍。", love: "温柔体贴，多倾听，用包容化解矛盾。", life: "保持灵活，不要固执，顺势而为。" },
+            { id: 58, name: "兑卦", symbol: "☱", level: "上签", fortune: "此卦宜悦 · 和颜悦色", main: "丽泽，兑，君子以朋友讲习", sub: "开心！沟通顺畅，人际关系和谐，笑容是最好的武器。", work: "团队合作愉快，适合谈判、公关、销售，你的亲和力会加分。", love: "约会气氛超好，多赞美对方，甜言蜜语很管用。", life: "和朋友聚会、聊天、唱歌，今天适合放松。" },
+            { id: 59, name: "涣卦", symbol: "☴☵", level: "中签", fortune: "此卦宜散 · 涣散重聚", main: "风行水上，涣，先王以享于帝立庙", sub: "人心散了？没关系！重新凝聚共识，打破僵局，从头再来。", work: "团队士气低落，需要团建或重新明确目标，鼓舞人心。", love: "解开误会，消除隔阂，让感情重新流动起来。", life: "去水边散步，或者清理思绪，放下执念。" },
+            { id: 60, name: "节卦", symbol: "☵☱", level: "中签", fortune: "此卦宜节 · 适可而止", main: "泽上有水，节，君子以制数度议德行", sub: "过犹不及。制定规则，控制欲望，有节制才能长久。", work: "控制预算，不要铺张浪费，按规矩办事。", love: "不要过度干涉对方，保持适当的距离和边界。", life: "节制饮食，控制消费，规律作息。" },
+            { id: 61, name: "中孚卦", symbol: "☴☱", level: "上签", fortune: "此卦宜信 · 诚信感物", main: "泽上有风，中孚，君子以议狱缓死", sub: "真诚是必杀技。只要你足够真诚，连猪鱼都能感动，何况是人？", work: "用诚意打动客户或领导，不要玩套路，真心换真心。", love: "坦白你的想法，不要隐瞒，信任是感情的基石。", life: "说到做到，遵守承诺，做个靠谱的人。" },
+            { id: 62, name: "小过卦", symbol: "☳☶", level: "下签", fortune: "此卦宜小 · 飞鸟遗音", main: "山上有雷，小过，君子以行过乎恭", sub: "小事可为，大事勿动。保持低调，不要好高骛远，做好手头的小事。", work: "不要接太大的项目，不要越级汇报，做好细节。", love: "不要过度付出，不要管得太宽，小事上关心就好。", life: "不要冒险，不要做超出能力的事，安全第一。" },
+            { id: 63, name: "既济卦", symbol: "☵☲", level: "上签", fortune: "此卦已成 · 初吉终乱", main: "水在火上，既济，君子以思患而预防之", sub: "大功告成！但别高兴太早，要防范盛极而衰，居安思危。", work: "项目成功，但要做好收尾和复盘，防范后续风险。", love: "感情稳定，但不要因为习惯了就忽略经营。", life: "享受成果，但也要为下一步做准备。" },
+            { id: 64, name: "未济卦", symbol: "☲☵", level: "中签", fortune: "此卦未成 · 慎辨物居方", main: "火在水上，未济，君子以慎辨物居方", sub: "还没结束！这是新的开始。不要放弃，继续努力，终点就在前方。", work: "项目还在进行中，不要松懈，坚持到底就是胜利。", love: "还在磨合期，不要急于求成，给彼此时间。", life: "路漫漫其修远兮，保持希望，继续前行。" }
+        ];
+
+        // ==================== 核心交互逻辑 ====================
+        
+        // 1. 抽签逻辑
+        function startDraw() {
+            const btn = document.getElementById('homeDrawBtn');
+            
+            // 添加摇晃动画
+            btn.classList.add('shaking');
+            
+            // 随机获取一卦 (0 到 63)
+            const randomIndex = Math.floor(Math.random() * yiJingData.length);
+            const currentGua = yiJingData[randomIndex];
+            
+            // 模拟抽签延迟 0.8秒
+            setTimeout(() => {
+                btn.classList.remove('shaking');
+                updateResultPage(currentGua);
+                switchPage('resultPage');
+            }, 800);
+        }
+
+        // 2. 更新结果页内容
+        function updateResultPage(gua) {
+            document.getElementById('fortuneBar').innerHTML = `🌙 ${gua.fortune} 🌙`;
+            document.getElementById('resSymbol').textContent = gua.symbol;
+            document.getElementById('resName').innerHTML = `${gua.name} <span class="card-level-tag">${gua.level}</span>`;
+            document.getElementById('resIndex').textContent = `第 ${gua.id} 卦 · 六十四卦之一`;
+            document.getElementById('resMain').textContent = gua.main;
+            document.getElementById('resSub').textContent = gua.sub;
+            document.getElementById('resWork').textContent = gua.work;
+            document.getElementById('resLove').textContent = gua.love;
+            document.getElementById('resLife').textContent = gua.life;
+        }
+
+        // 3. 页面切换
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            window.scrollTo(0, 0); // 切换页面时滚动到顶部
+        }
+
+        function goHome() { switchPage('homePage'); }
+
+        // 4. 分享功能 (调用原生分享或复制链接)
+        function shareResult() {
+            const name = document.getElementById('resName').innerText;
+            const main = document.getElementById('resMain').innerText;
+            const text = `【灵光·白话签】我抽到了「${name}」：${main}。快来测测你的今日运势！`;
+              //alert('签文已复制！\n' + text);
+            if (navigator.share) {
+                navigator.share({ title: '灵光·白话签', text: text });
+            } else {
+                alert('签文已复制！\n' + text);
+                // 实际项目中这里可以加复制到剪贴板的逻辑
+            }
+        }
+    </script>
+</body>
+</html>
